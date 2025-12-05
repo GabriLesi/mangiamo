@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dove Andiamo a Mangiare?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:hover, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .spin-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .spin-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .spin-button:active {
+            transform: translateY(0);
+        }
+
+        .spin-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .wheel-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wheel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            max-width: 800px;
+        }
+
+        .restaurant-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 200px;
+            transition: all 0.3s;
+            opacity: 0.3;
+            transform: scale(0.9);
+        }
+
+        .restaurant-card.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .restaurant-card.winner {
+            opacity: 1;
+            transform: scale(1.1);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.6);
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1.1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .restaurant-card h3 {
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .restaurant-card p {
+            margin: 5px 0;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .result-message {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .restaurants-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .list-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .list-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .list-card p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #667eea;
+            color: white;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ Dove Andiamo a Mangiare?</h1>
+
+        <div class="controls">
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="cuisine-filter">Tipo di Cucina:</label>
+                    <select id="cuisine-filter">
+                        <option value="all">Tutte</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="day-filter">Disponibilità:</label>
+                    <select id="day-filter">
+                        <option value="all">Tutti i giorni</option>
+                        <option value="today">Solo aperti oggi</option>
+                    </select>
+                </div>
+            </div>
+            <button class="spin-button" id="spin-btn">🎰 Gira la Ruota!</button>
+        </div>
+
+        <div class="wheel-container">
+            <div class="wheel" id="wheel"></div>
+        </div>
+        <div class="result-message" id="result"></div>
+
+        <div class="restaurants-list" id="restaurants-list"></div>
+    </div>
+
+    <script>
+        const restaurants = [
+            {
+                name: "La Corte",
+                cuisine: "Tradizionale",
+                phone: "0522 516789",
+                openDays: [1, 3, 4, 5, 6, 0] // Tutti i giorni
+            }
+        ];
+
+        const dayNames = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+        const today = new Date().getDay();
+
+        let filteredRestaurants = [...restaurants];
+        let isSpinning = false;
+
+        function initFilters() {
+            const cuisineFilter = document.getElementById('cuisine-filter');
+            const cuisines = [...new Set(restaurants.map(r => r.cuisine))];
+            
+            cuisines.forEach(cuisine => {
+                const option = document.createElement('option');
+                option.value = cuisine;
+                option.textContent = cuisine;
+                cuisineFilter.appendChild(option);
+            });
+
+            cuisineFilter.addEventListener('change', applyFilters);
+            document.getElementById('day-filter').addEventListener('change', applyFilters);
+        }
+
+        function applyFilters() {
+            const cuisineFilter = document.getElementById('cuisine-filter').value;
+            const dayFilter = document.getElementById('day-filter').value;
+
+            filteredRestaurants = restaurants.filter(r => {
+                const cuisineMatch = cuisineFilter === 'all' || r.cuisine === cuisineFilter;
+                const dayMatch = dayFilter === 'all' || r.openDays.includes(today);
+                return cuisineMatch && dayMatch;
+            });
+
+            displayRestaurantsList();
+            document.getElementById('result').textContent = 
+                `${filteredRestaurants.length} ristoranti disponibili`;
+        }
+
+        function displayRestaurantsList() {
+            const list = document.getElementById('restaurants-list');
+            list.innerHTML = '';
+
+            filteredRestaurants.forEach(restaurant => {
+                const card = document.createElement('div');
+                card.className = 'list-card';
+                
+                const openToday = restaurant.openDays.includes(today) ? '✅ Aperto oggi' : '❌ Chiuso oggi';
+                const daysOpen = restaurant.openDays.map(d => dayNames[d]).join(', ');
+                
+                card.innerHTML = `
+                    <h3>${restaurant.name}</h3>
+                    <p><span class="badge">${restaurant.cuisine}</span></p>
+                    <p>📞 ${restaurant.phone}</p>
+                    <p>📅 ${daysOpen}</p>
+                    <p><strong>${openToday}</strong></p>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function spinWheel() {
+            if (isSpinning || filteredRestaurants.length === 0) return;
+            
+            isSpinning = true;
+            document.getElementById('spin-btn').disabled = true;
+            document.getElementById('result').textContent = '';
+
+            const wheel = document.getElementById('wheel');
+            wheel.innerHTML = '';
+
+            filteredRestaurants.forEach(restaurant => {
+                const card = document.createElement('div');
+                card.className = 'restaurant-card';
+                card.innerHTML = `
+                    <h3>${restaurant.name}</h3>
+                    <p>${restaurant.cuisine}</p>
+                    <p>${restaurant.phone}</p>
+                `;
+                wheel.appendChild(card);
+            });
+
+            let currentIndex = 0;
+            let speed = 100;
+            const maxSpeed = 500;
+            const spinDuration = 3000;
+            const startTime = Date.now();
+
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / spinDuration;
+
+                if (progress < 1) {
+                    speed = 100 + (maxSpeed - 100) * progress;
+                    
+                    const cards = wheel.querySelectorAll('.restaurant-card');
+                    cards.forEach(card => card.classList.remove('active'));
+                    cards[currentIndex].classList.add('active');
+
+                    currentIndex = (currentIndex + 1) % filteredRestaurants.length;
+
+                    setTimeout(animate, speed);
+                } else {
+                    const winnerIndex = Math.floor(Math.random() * filteredRestaurants.length);
+                    const cards = wheel.querySelectorAll('.restaurant-card');
+                    cards.forEach(card => card.classList.remove('active'));
+                    cards[winnerIndex].classList.add('winner');
+
+                    const winner = filteredRestaurants[winnerIndex];
+                    document.getElementById('result').textContent = 
+                        `🎉 Andiamo da ${winner.name}! 🎉`;
+
+                    isSpinning = false;
+                    document.getElementById('spin-btn').disabled = false;
+                }
+            }
+
+            animate();
+        }
+
+        document.getElementById('spin-btn').addEventListener('click', spinWheel);
+
+        initFilters();
+        applyFilters();
+    </script>
+</body>
+</html>
