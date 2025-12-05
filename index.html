@@ -151,9 +151,13 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             margin-bottom: 30px;
             min-height: 300px;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
+        }
+
+        .wheel-container.visible {
+            display: flex;
         }
 
         .wheel {
@@ -220,6 +224,44 @@
             font-weight: 600;
             margin-top: 20px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .result-message.special {
+            font-size: 1.3em;
+            animation: fadeInBounce 0.6s ease-out;
+        }
+
+        @keyframes fadeInBounce {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            60% {
+                transform: translateY(5px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ultra-random-mode {
+            animation: rainbowBorder 2s linear infinite;
+        }
+
+        .ultra-random-mode .wheel-container {
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes rainbowBorder {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-1deg); }
+            75% { transform: translateX(5px) rotate(1deg); }
         }
 
         .restaurants-list {
@@ -386,6 +428,9 @@
         let filteredRestaurants = [...restaurants];
         let isSpinning = false;
         let selectedCuisines = new Set();
+        let ultraRandomMode = false;
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let konamiIndex = 0;
 
         function initFilters() {
             const cuisineFilter = document.getElementById('cuisine-filter');
@@ -431,12 +476,16 @@
         function applyFilters() {
             const dayFilter = document.getElementById('day-filter').value;
 
-            filteredRestaurants = restaurants.filter(r => {
-                const cuisineMatch = selectedCuisines.size === 0 || 
-                    r.cuisine.some(c => selectedCuisines.has(c));
-                const dayMatch = dayFilter === 'all' || r.openDays.includes(today);
-                return cuisineMatch && dayMatch;
-            });
+            if (ultraRandomMode) {
+                filteredRestaurants = [...restaurants];
+            } else {
+                filteredRestaurants = restaurants.filter(r => {
+                    const cuisineMatch = selectedCuisines.size === 0 || 
+                        r.cuisine.some(c => selectedCuisines.has(c));
+                    const dayMatch = dayFilter === 'all' || r.openDays.includes(today);
+                    return cuisineMatch && dayMatch;
+                });
+            }
 
             displayRestaurantsList();
             
@@ -444,11 +493,12 @@
                 document.getElementById('result').textContent = 
                     '❌ Nessun ristorante disponibile con i filtri selezionati';
             } else {
-                const cuisineText = selectedCuisines.size > 0 
+                const modeText = ultraRandomMode ? ' 🎮 MODALITÀ ULTRA RANDOM ATTIVA! 🎮' : '';
+                const cuisineText = selectedCuisines.size > 0 && !ultraRandomMode
                     ? ` (${Array.from(selectedCuisines).join(', ')})`
                     : '';
                 document.getElementById('result').textContent = 
-                    `${filteredRestaurants.length} ristoranti disponibili${cuisineText}`;
+                    `${filteredRestaurants.length} ristoranti disponibili${cuisineText}${modeText}`;
             }
         }
 
@@ -483,8 +533,31 @@
             
             isSpinning = true;
             document.getElementById('spin-btn').disabled = true;
-            document.getElementById('result').textContent = '';
+            
+            const resultDiv = document.getElementById('result');
+            const currentHour = new Date().getHours();
+            
+            // Easter egg orari improbabili
+            if (currentHour >= 0 && currentHour < 9) {
+                resultDiv.textContent = '🌙 Cerchi un ristorante così presto? Il cornetto al bar è sempre una buona idea! ☕';
+                resultDiv.classList.add('special');
+                setTimeout(() => resultDiv.classList.remove('special'), 3000);
+            } else if (currentHour >= 18 && currentHour < 24) {
+                const lateMessages = [
+                    '🌙 Cena tardiva? Ottima scelta! 🍝',
+                    '🦉 Gli uccelli notturni mangiano meglio! 🌟',
+                    '✨ La serata inizia adesso! 🍷'
+                ];
+                resultDiv.textContent = lateMessages[Math.floor(Math.random() * lateMessages.length)];
+                resultDiv.classList.add('special');
+                setTimeout(() => resultDiv.classList.remove('special'), 3000);
+            } else {
+                resultDiv.textContent = '';
+            }
 
+            const wheelContainer = document.querySelector('.wheel-container');
+            wheelContainer.classList.add('visible');
+            
             const wheel = document.getElementById('wheel');
             wheel.innerHTML = '';
 
@@ -535,6 +608,54 @@
             }
 
             animate();
+        }
+
+        // Konami Code Easter Egg
+        document.addEventListener('keydown', (e) => {
+            if (e.key === konamiCode[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konamiCode.length) {
+                    activateUltraRandomMode();
+                    konamiIndex = 0;
+                }
+            } else {
+                konamiIndex = 0;
+            }
+        });
+
+        function activateUltraRandomMode() {
+            ultraRandomMode = !ultraRandomMode;
+            const container = document.querySelector('.container');
+            
+            if (ultraRandomMode) {
+                container.classList.add('ultra-random-mode');
+                document.getElementById('result').textContent = 
+                    '🎮 MODALITÀ ULTRA RANDOM ATTIVATA! I filtri sono ignorati! 🎮';
+                document.getElementById('result').style.fontSize = '2em';
+                
+                // Disabilita visivamente i filtri
+                document.querySelectorAll('.cuisine-checkbox').forEach(cb => {
+                    cb.style.opacity = '0.3';
+                    cb.style.pointerEvents = 'none';
+                });
+                document.getElementById('day-filter').style.opacity = '0.3';
+                document.getElementById('day-filter').disabled = true;
+            } else {
+                container.classList.remove('ultra-random-mode');
+                document.getElementById('result').textContent = 
+                    '👋 Modalità normale ripristinata!';
+                document.getElementById('result').style.fontSize = '1.5em';
+                
+                // Riabilita i filtri
+                document.querySelectorAll('.cuisine-checkbox').forEach(cb => {
+                    cb.style.opacity = '1';
+                    cb.style.pointerEvents = 'auto';
+                });
+                document.getElementById('day-filter').style.opacity = '1';
+                document.getElementById('day-filter').disabled = false;
+            }
+            
+            applyFilters();
         }
 
         document.getElementById('spin-btn').addEventListener('click', spinWheel);
